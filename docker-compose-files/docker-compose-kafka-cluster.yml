@@ -1,0 +1,95 @@
+version: '3.5'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    restart: unless-stopped
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      TZ: "${TZ-Europe/London}"
+
+  kafka1:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka1
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1  # Unique ID for this broker
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"  # Replicate offsets topic across all 3 brokers
+      KAFKA_DEFAULT_REPLICATION_FACTOR: "3"  # Replicate new topics across all 3 brokers
+      KAFKA_MIN_INSYNC_REPLICAS: "2"  # At least 2 replicas must acknowledge writes
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      TZ: "${TZ-Europe/London}"
+
+  kafka2:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka2
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    ports:
+      - "29093:29093"
+    environment:
+      KAFKA_BROKER_ID: 2  # Unique ID for second broker
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092,PLAINTEXT_HOST://localhost:29093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
+      KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
+      KAFKA_MIN_INSYNC_REPLICAS: "2"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      TZ: "${TZ-Europe/London}"
+
+  kafka3:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka3
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    ports:
+      - "29094:29094"
+    environment:
+      KAFKA_BROKER_ID: 3  # Unique ID for third broker
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka3:9092,PLAINTEXT_HOST://localhost:29094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
+      KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
+      KAFKA_MIN_INSYNC_REPLICAS: "2"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      TZ: "${TZ-Europe/London}"
+      
+  producer:
+    image: producer
+    container_name: producer
+    ports:
+      - "8081:8081"
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+    environment:
+      KAFKA_SERVER: "kafka1:9092,kafka2:9092,kafka3:9092"
+
+  consumer:
+    image: consumer
+    container_name: consumer
+    ports:
+      - "8082:8082"
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+      - producer
+    environment:
+      KAFKA_SERVER: "kafka1:9092,kafka2:9092,kafka3:9092"
