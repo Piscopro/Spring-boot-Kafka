@@ -21,7 +21,7 @@ This is to demonstrate two simple spring boot microservices which uses kafka to 
 ### 1. Kafka with 1 broker
 ![Database](img/prod1.png)
 Producer send message
-![Database](img/prod2.png)
+![Database](img/cons1.png)
 Consumer receive message
 
 ### 2. Kafka with broker cluster
